@@ -1,0 +1,2 @@
+CompileFlags:
+  Add: [-x, cuda, -I/home/kirill/kp-cuda/include, -std=c++11, -Xclang, -fcuda-allow-variadic-functions]
