@@ -41,7 +41,7 @@ void CpuScene::GenerateScene()
     }
 }
 
-Vector3f CpuScene::TraceRay(const Ray& ray, int depth, uint64_t& countOfRays)
+Vector3f CpuScene::TraceRay(const Ray& ray, uint64_t depth, uint64_t& countOfRays)
 {
     if (depth > maxDepth) {
         return Vector3f(0.0, 0.0, 0.0);
@@ -78,13 +78,13 @@ Vector3f CpuScene::TraceRay(const Ray& ray, int depth, uint64_t& countOfRays)
 
     if (polygon.reflection() > 0) {
         Vector3d reflectedDir = Vector3d::reflect(ray.view(), polygon.triangle().n());
-        Ray reflectedRay(intersection + SHIFT * reflectedDir, reflectedDir, ray.uid());
+        Ray reflectedRay(intersection + SHIFT * reflectedDir, reflectedDir, ray.uid(), polygon.transparency() * ray.color() * localColor);
         ++countOfRays;
         finalColor += polygon.reflection() * TraceRay(reflectedRay, depth + 1, countOfRays);
     }
 
     if (polygon.transparency() > 0) {
-        Ray transparentRay(intersection + SHIFT * ray.view(), ray.view(), ray.uid());
+        Ray transparentRay(intersection + SHIFT * ray.view(), ray.view(), ray.uid(), polygon.reflection() * ray.color() * localColor);
         finalColor += polygon.transparency() * TraceRay(transparentRay, depth + 1, countOfRays);
         ++countOfRays;
     }
@@ -138,7 +138,7 @@ void CpuScene::Render()
     std::vector<uchar4> image;
     std::vector<uchar4> output;
 
-    for (int k = 0; k < frames_m; ++k) {
+    for (uint64_t k = 0; k < frames_m; ++k) {
         Timer timer;
         timer.begin();
         double time = k * dt;
@@ -146,7 +146,7 @@ void CpuScene::Render()
         camera_m.updateView(time);
         auto countRays = GenerateFrame(k, image);
         ApplySSAA(image, output, camera_m.w(), camera_m.h(), upscaleFactor);
-        for (int i = 0; i < camera_m.w() * camera_m.h() / 2; ++i) {
+        for (uint64_t i = 0; i < camera_m.w() * camera_m.h() / 2; ++i) {
             std::swap(output[i], output[camera_m.w() * camera_m.h() - i - 1]);
         }
         SaveFile(savePath_m, output, camera_m.w(), camera_m.h(), k);

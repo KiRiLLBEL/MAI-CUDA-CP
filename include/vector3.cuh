@@ -161,7 +161,7 @@ public:
         };
     }
 
-    __host__ __device__ V3Type& operator&=(const V3Type& other)
+    __device__ V3Type& operator&=(const V3Type& other)
     {
         atomicAdd(&x_m, other.x_m);
         atomicAdd(&y_m, other.y_m);

@@ -174,7 +174,7 @@ int64_t GpuScene::GenerateFrame(int UUID, uchar4* deviceSSAA)
     CreateRaysKernel<<<BLOCKS_2D, THREADS_2D>>>(deviceCameraPtr, deviceRaysInputPtr);
     cudaDeviceSynchronize();
     int64_t countRays{0};
-    for(int depth = 0; depth < maxDepth; ++depth)
+    for(uint64_t depth = 0; depth < maxDepth; ++depth)
     {
         countRays += inputSize;
         Ray* deviceRaysOutputPtr;
@@ -217,7 +217,7 @@ void GpuScene::Render()
     cudaMalloc(&deviceSSAA, camera_m.wSSAA() * camera_m.hSSAA() * sizeof(uchar4));
     uchar4* deviceData;
     cudaMalloc(&deviceData, camera_m.w() * camera_m.h() * sizeof(uchar4));
-    for(int k = 0; k < frames_m; ++k)
+    for(uint64_t k = 0; k < frames_m; ++k)
     {
         Timer timer;
         timer.begin();

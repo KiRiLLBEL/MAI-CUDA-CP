@@ -19,7 +19,7 @@ private:
     uint64_t upscaleFactor;
 private:
     int64_t GenerateFrame(int UUID, std::vector<uchar4>& image);
-    Vector3f TraceRay(const Ray& ray, int depth, uint64_t& countOfRays);
+    Vector3f TraceRay(const Ray& ray, uint64_t depth, uint64_t& countOfRays);
 public:
     
     friend std::istream& operator>>(std::istream& in, CpuScene& scene)

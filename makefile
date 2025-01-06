@@ -1,6 +1,6 @@
 # Compiler
 COMPILER = /usr/local/cuda/bin/nvcc
-COMPILER_FLAGS = -G -g -std=c++11 -Werror cross-execution-space-call,all-warnings,deprecated-declarations -I$(INCLUDE_DIR)
+COMPILER_FLAGS = -G -g -std=c++11 -Xcompiler -Wall -Xcompiler -Werror -Werror cross-execution-space-call,all-warnings,deprecated-declarations -I$(INCLUDE_DIR)
 
 # Directories
 INCLUDE_DIR = include
@@ -12,7 +12,7 @@ TEST_DIR = test
 
 SOURCES = $(wildcard $(SOURCE_DIR)/*.cu)
 OBJECTS = $(patsubst $(SOURCE_DIR)/%.cu, $(BUILD_DIR)/%.o, $(SOURCES))
-BINARIES = course_project
+BINARIES = kp-cuda
 DATA_FILES = $(wildcard $(OUT_DIR)/img_*.data)
 PNG_FILES = $(DATA_FILES:.data=.png)
 
