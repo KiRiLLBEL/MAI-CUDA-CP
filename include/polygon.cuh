@@ -15,7 +15,7 @@ private:
     Triangle base_m;
     Vector3f color_m;
     double a_m, b_m, c_m, d_m;
-    double reflection_m, transparency_m;
+    double reflection_m{0}, transparency_m{0};
     int64_t countOfLights_m{0};
     Vector3d v1_m;
     Vector3d v2_m;
@@ -123,7 +123,7 @@ public:
             for (int i = 1; i <= countOfLights_m; ++i)
             {
                 Vector3d pointLight = v1_m + i * vl;
-                if ((pointLight - intersection).length() < 0.001)
+                if ((pointLight - intersection).length() < 0.025)
                 {
                     return Vector3f(16, 16, 16);
                 }

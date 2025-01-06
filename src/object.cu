@@ -12,8 +12,8 @@
 
 namespace render
 {
-const Vector3f EDGE_BASE_COLOR(0.7f, 0.7f, 0.7f);
-const Vector3f CORNER_BASE_COLOR(0.9f, 0.5f, 0.4f);
+const Vector3f EDGE_BASE_COLOR(0.25f, 0.25f, 0.25f);
+const Vector3f CORNER_BASE_COLOR(0.25f, 0.25f, 0.25f);
 void Object::CreateObjectFromFile(const std::string& path, std::vector<Polygon>& polygons)
 {
     std::ifstream file(path);
