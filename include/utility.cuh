@@ -16,6 +16,42 @@ enum Device
     DEFAULT
 };
 
+struct Timer
+{
+    float elapsedTimeMs;
+    cudaEvent_t eventStart, eventStop;
+
+    Timer()
+    {
+        cudaEventCreate(&eventStart);
+        cudaEventCreate(&eventStop);
+    }
+
+    void begin()
+    {
+        cudaEventRecord(eventStart);
+    }
+
+    void finish()
+    {
+        cudaDeviceSynchronize();
+        cudaEventRecord(eventStop);
+        cudaEventSynchronize(eventStop);
+    }
+
+    float elapsed()
+    {
+        cudaEventElapsedTime(&elapsedTimeMs, eventStart, eventStop);
+        return elapsedTimeMs;
+    }
+
+    ~Timer()
+    {
+        cudaEventDestroy(eventStart);
+        cudaEventDestroy(eventStop);
+    }
+};
+
 Device ProcessArgs(int argc, char* argv[]);
 
 int SplitString(const std::string& str, const char delimiter);

@@ -7,6 +7,7 @@
 #include <light.cuh>
 #include <floor.cuh>
 #include <polygon.cuh>
+#include <ssaa.cuh>
 
 #include <array>
 #include <vector>

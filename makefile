@@ -31,6 +31,9 @@ run: $(BINARIES)
 run_test:
 	./$(BINARIES) < $(TEST_DIR)/test.txt
 
+run_test_cpu:
+	./$(BINARIES) --cpu < $(TEST_DIR)/test.txt
+
 convert_floor:
 	python ./scripts/conv.py ./res/floor.jpg ./res/floor.data
 
@@ -45,6 +48,6 @@ memcheck:
 all: $(BINARIES) convert_floor
 	mkdir $(OUT_DIR)
 clean_out:
-	rm -rf $(OUT_DIR)
+	rm -rf $(OUT_DIR)/*
 clean:
 	rm -rf $(BUILD_DIR) $(BINARIES) $(OUT_DIR) $(RESOURCE_DIR)/floor.data $(PNG_FILES) $(DATA_FILES)

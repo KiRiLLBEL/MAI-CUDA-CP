@@ -16,7 +16,7 @@ private:
     Vector3f color_m;
     double a_m, b_m, c_m, d_m;
     double reflection_m, transparency_m;
-    int64_t countOfLights_m;
+    int64_t countOfLights_m{0};
     Vector3d v1_m;
     Vector3d v2_m;
     Vector3d v3_m;

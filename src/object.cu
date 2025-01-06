@@ -12,8 +12,8 @@
 
 namespace render
 {
-const Vector3f EDGE_BASE_COLOR(0.25f, 0.25f, 0.25f);
-
+const Vector3f EDGE_BASE_COLOR(0.7f, 0.7f, 0.7f);
+const Vector3f CORNER_BASE_COLOR(0.9f, 0.5f, 0.4f);
 void Object::CreateObjectFromFile(const std::string& path, std::vector<Polygon>& polygons)
 {
     std::ifstream file(path);
@@ -166,7 +166,7 @@ void Object::CreateObjectFromFile(const std::string& path, std::vector<Polygon>&
 
             polygons.push_back(
                 Polygon(firstEdge, EDGE_BASE_COLOR, lightCount_m, viAvg, vjAvg));
-            polygons.push_back(Polygon(cornerI, EDGE_BASE_COLOR));
+            polygons.push_back(Polygon(cornerI, CORNER_BASE_COLOR));
 
             t = Polygon(secondEdge, EDGE_BASE_COLOR).RayIntersection(
                 Ray({0.0, 0.0, 0.0}, vertices[j], 0));
@@ -178,7 +178,7 @@ void Object::CreateObjectFromFile(const std::string& path, std::vector<Polygon>&
 
             polygons.push_back(
                 Polygon(secondEdge, EDGE_BASE_COLOR, lightCount_m, viAvg, vjAvg));
-            polygons.push_back(Polygon(cornerJ, EDGE_BASE_COLOR));
+            polygons.push_back(Polygon(cornerJ, CORNER_BASE_COLOR));
 
             auto firstId = sharedPolygonIds[0];
             auto secondId = sharedPolygonIds[1];
@@ -186,7 +186,7 @@ void Object::CreateObjectFromFile(const std::string& path, std::vector<Polygon>&
             {
                 t1.shift(center_m);
                 polygons.push_back(
-                    Polygon(t1, EDGE_BASE_COLOR, reflection_m, transparency_m));
+                    Polygon(t1, color_m, reflection_m, transparency_m));
                 usedPolygonId.insert(firstId);
             }
 
@@ -194,7 +194,7 @@ void Object::CreateObjectFromFile(const std::string& path, std::vector<Polygon>&
             {
                 t2.shift(center_m);
                 polygons.push_back(
-                    Polygon(t2, EDGE_BASE_COLOR, reflection_m, transparency_m));
+                    Polygon(t2, color_m, reflection_m, transparency_m));
                 usedPolygonId.insert(secondId);
             }
         }

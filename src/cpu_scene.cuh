@@ -17,9 +17,10 @@ private:
     std::vector<Polygon> polygons_m;
     uint64_t maxDepth;
     uint64_t upscaleFactor;
+private:
+    int64_t GenerateFrame(int UUID, std::vector<uchar4>& image);
+    Vector3f TraceRay(const Ray& ray, int depth, uint64_t& countOfRays);
 public:
-    void GenerateScene() override;
-    void Render() override;
     
     friend std::istream& operator>>(std::istream& in, CpuScene& scene)
     {
@@ -44,5 +45,8 @@ public:
         in >> scene.maxDepth;
         return in >> scene.upscaleFactor;
     }
+
+    void GenerateScene() override;
+    void Render() override;
 };
 };

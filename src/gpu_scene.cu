@@ -1,5 +1,5 @@
 #include "gpu_scene.cuh"
-#include <ssaa.cuh>
+#include <iostream>
 #include <limits>
 
 namespace render
@@ -51,13 +51,13 @@ void GpuScene::GenerateScene()
 
 __global__ void CreateRaysKernel(const Camera* camera, Ray* deviceRays)
 {
-    double dw = 2.0 / (camera->w() - 1.0);
-    double dh = 2.0 / (camera->h() - 1.0);
+    double dw = 2.0 / (camera->wSSAA() - 1.0);
+    double dh = 2.0 / (camera->hSSAA() - 1.0);
     double z = 1.0 / std::tan(camera->angle() * M_PI / 360.0);
 
     Vector3d bz = camera->view() - camera->position();
-    Vector3d bx = bz|Vector3d(0.0, 0.0, 1.0);
-    Vector3d by = bx|bz;
+    Vector3d bx = bz | Vector3d(0.0, 0.0, 1.0);
+    Vector3d by = bx | bz;
 
     bx.norm();
     by.norm();
@@ -66,14 +66,14 @@ __global__ void CreateRaysKernel(const Camera* camera, Ray* deviceRays)
     const int offsetx = blockDim.x * gridDim.x;
     const int offsety = blockDim.y * gridDim.y;
 
-    for (int idx = blockDim.x * blockIdx.x + threadIdx.x; idx < camera->w(); idx += offsetx)
+    for (int idx = blockDim.x * blockIdx.x + threadIdx.x; idx < camera->wSSAA(); idx += offsetx)
     {
-        for (int idy = blockDim.y * blockIdx.y + threadIdx.y; idy < camera->h(); idy += offsety)
+        for (int idy = blockDim.y * blockIdx.y + threadIdx.y; idy < camera->hSSAA(); idy += offsety)
         {
-            Vector3d v(-1.0 + dw * idx, (-1.0 + dh * idy) * camera->h() / camera->w(), z);
+            Vector3d v(-1.0 + dw * idx, (-1.0 + dh * idy) * camera->hSSAA() / camera->wSSAA(), z);
             auto dir = Vector3d::transposeMultiplication(bx, by, bz, v);
-            uint64_t rayId = (camera->h() - 1 - idy) * camera->w() + idx;
-            deviceRays[idx * camera->h() + idy] = Ray(camera->position(), dir, rayId);
+            uint64_t rayId = (camera->hSSAA() - 1 - idy) * camera->wSSAA() + idx;
+            deviceRays[idx * camera->hSSAA() + idy] = Ray(camera->position(), dir, rayId);
         }
     }    
 }
@@ -157,7 +157,7 @@ __global__ void NormalizeDataKernel(Vector3f* deviceData, uchar4* deviceSSAA, in
 }
 
 
-void GpuScene::GenerateFrame(int UUID, uchar4* deviceSSAA)
+int64_t GpuScene::GenerateFrame(int UUID, uchar4* deviceSSAA)
 {
     int w = camera_m.wSSAA();
     int h = camera_m.hSSAA();
@@ -206,6 +206,7 @@ void GpuScene::GenerateFrame(int UUID, uchar4* deviceSSAA)
     cudaFree(deviceDataPtr);
     cudaFree(deviceRaysInputPtr);
     cudaFree(deviceCameraPtr);
+    return countRays;
 } 
 
 void GpuScene::Render() 
@@ -218,10 +219,12 @@ void GpuScene::Render()
     cudaMalloc(&deviceData, camera_m.w() * camera_m.h() * sizeof(uchar4));
     for(int k = 0; k < frames_m; ++k)
     {
+        Timer timer;
+        timer.begin();
         double time = k * dt;
         camera_m.updatePosition(time);
         camera_m.updateView(time);
-        GenerateFrame(k, deviceSSAA);
+        auto countRays = GenerateFrame(k, deviceSSAA);
         ssaaGPUKernel<<<BLOCKS_2D, THREADS_2D>>>(
             deviceSSAA, 
             deviceData,
@@ -231,6 +234,8 @@ void GpuScene::Render()
         std::vector<uchar4> output(camera_m.w() * camera_m.h());
         cudaMemcpy(output.data(), deviceData, camera_m.w() * camera_m.h() * sizeof(uchar4), cudaMemcpyDeviceToHost);
         SaveFile(savePath_m, output, camera_m.w(), camera_m.h(), k);
+        timer.finish();
+        std::cout << k + 1 << '\t' << timer.elapsed() << '\t' << countRays << "\n";
     }
 
     cudaFree(deviceSSAA);
