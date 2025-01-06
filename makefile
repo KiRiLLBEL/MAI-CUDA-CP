@@ -13,7 +13,7 @@ TEST_DIR = test
 SOURCES = $(wildcard $(SOURCE_DIR)/*.cu)
 OBJECTS = $(patsubst $(SOURCE_DIR)/%.cu, $(BUILD_DIR)/%.o, $(SOURCES))
 BINARIES = course_project
-DATA_FILES = $(wildcard $(DATA_DIR)/img_*.data)
+DATA_FILES = $(wildcard $(OUT_DIR)/img_*.data)
 PNG_FILES = $(DATA_FILES:.data=.png)
 
 $(BINARIES): $(OBJECTS)
@@ -28,21 +28,21 @@ $(BUILD_DIR):
 run: $(BINARIES)
 	./$(BINARIES)
 
-test:
-	$(BINARIES) < $(TEST_DIR)/test.txt
+run_test:
+	./$(BINARIES) < $(TEST_DIR)/test.txt
 
 convert_floor:
 	python ./scripts/conv.py ./res/floor.jpg ./res/floor.data
 
-convert: $(PNG_FILES)
+images_create: $(PNG_FILES)
 
-$(DATA_DIR)/%.png: $(DATA_DIR)/%.data
+$(OUT_DIR)/%.png: $(OUT_DIR)/%.data
 	python ./scripts/conv.py $< $@
 
 memcheck:
 	/usr/local/cuda/bin/compute-sanitizer --tool memcheck $(BINARIES)
 
-all: $(BINARIES)
-
+all: $(BINARIES) convert_floor
+	mkdir $(OUT_DIR)
 clean:
-	rm -rf $(BUILD_DIR) $(BINARIES) $(OUT_DIR) $(RESOURCE_DIR)/floor.data
+	rm -rf $(BUILD_DIR) $(BINARIES) $(OUT_DIR) $(RESOURCE_DIR)/floor.data $(PNG_FILES) $(DATA_FILES)

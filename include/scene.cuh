@@ -14,7 +14,7 @@
 #define OBJECTS_COUNT 3
 #define SHIFT 1e-3
 const dim3 BLOCKS_2D(64, 64);
-const dim3 THREADS_2D(64, 64);
+const dim3 THREADS_2D(1, 64);
 
 constexpr std::array<const char*, 3> ObjectsPaths
 {

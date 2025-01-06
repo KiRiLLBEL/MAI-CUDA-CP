@@ -37,8 +37,8 @@ void GpuScene::GenerateScene()
     {
         objects_m[i].CreateObjectFromFile(ObjectsPaths[i], polygons_m);
     }
-        cudaMalloc(&devicePolygons_m, polygons_m.size() * sizeof(Polygon));
-        cudaMemcpy(devicePolygons_m, polygons_m.data(), polygons_m.size() * sizeof(Polygon), cudaMemcpyHostToDevice);
+    cudaMalloc(&devicePolygons_m, polygons_m.size() * sizeof(Polygon));
+    cudaMemcpy(devicePolygons_m, polygons_m.data(), polygons_m.size() * sizeof(Polygon), cudaMemcpyHostToDevice);
 }
 
 __global__ void CreateRaysKernel(const Camera* camera, Ray* deviceRays)
