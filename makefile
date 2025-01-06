@@ -44,5 +44,7 @@ memcheck:
 
 all: $(BINARIES) convert_floor
 	mkdir $(OUT_DIR)
+clean_out:
+	rm -rf $(OUT_DIR)
 clean:
 	rm -rf $(BUILD_DIR) $(BINARIES) $(OUT_DIR) $(RESOURCE_DIR)/floor.data $(PNG_FILES) $(DATA_FILES)
