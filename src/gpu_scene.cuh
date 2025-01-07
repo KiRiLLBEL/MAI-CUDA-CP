@@ -19,7 +19,7 @@ private:
     uint64_t maxDepth;
     uint64_t upscaleFactor;
 private:
-    int64_t GenerateFrame(int UUID, uchar4* deviceSSAA);
+    int64_t GenerateFrame(uint64_t UUID, uchar4* deviceSSAA);
 public:
 
     ~GpuScene()

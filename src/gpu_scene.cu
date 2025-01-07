@@ -1,14 +1,15 @@
 #include "gpu_scene.cuh"
+#include <cstdint>
 #include <iostream>
 #include <limits>
 
 namespace render
 {
 
-__global__ void PrepareBuffer(Vector3f* deviceData, const int size) {
-    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    const int offset = gridDim.x * blockDim.x;
-    for (int i = idx; i < size; i += offset) {
+__global__ void PrepareBuffer(Vector3f* deviceData, const uint64_t size) {
+    const uint64_t idx = blockIdx.x * blockDim.x + threadIdx.x;
+    const uint64_t offset = gridDim.x * blockDim.x;
+    for (uint64_t i = idx; i < size; i += offset) {
         deviceData[i] = Vector3f(0.0, 0.0, 0.0);
     }
 }
@@ -63,12 +64,12 @@ __global__ void CreateRaysKernel(const Camera* camera, Ray* deviceRays)
     by.norm();
     bz.norm();
 
-    const int offsetx = blockDim.x * gridDim.x;
-    const int offsety = blockDim.y * gridDim.y;
+    const uint64_t offsetx = blockDim.x * gridDim.x;
+    const uint64_t offsety = blockDim.y * gridDim.y;
 
-    for (int idx = blockDim.x * blockIdx.x + threadIdx.x; idx < camera->wSSAA(); idx += offsetx)
+    for (uint64_t idx = blockDim.x * blockIdx.x + threadIdx.x; idx < camera->wSSAA(); idx += offsetx)
     {
-        for (int idy = blockDim.y * blockIdx.y + threadIdx.y; idy < camera->hSSAA(); idy += offsety)
+        for (uint64_t idy = blockDim.y * blockIdx.y + threadIdx.y; idy < camera->hSSAA(); idy += offsety)
         {
             Vector3d v(-1.0 + dw * idx, (-1.0 + dh * idy) * camera->hSSAA() / camera->wSSAA(), z);
             auto dir = Vector3d::transposeMultiplication(bx, by, bz, v);
@@ -80,18 +81,18 @@ __global__ void CreateRaysKernel(const Camera* camera, Ray* deviceRays)
 
 __global__ void ProcessRaysKernel(
     const Ray* deviceRaysInput,
-    const int inputSize,
+    const uint64_t inputSize,
     Ray* deviceRaysOutput,
-    int* outputSize,
+    uint64_t* outputSize,
     Vector3f* deviceData,
     const Light* deviceLights,
     const int lightsCount,
     const Polygon* devicePolygons,
     int polygonsCount)
 {
-    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    const int offset = gridDim.x * blockDim.x;
-    for(int k = idx; k < inputSize; k += offset)
+    const uint64_t idx = blockIdx.x * blockDim.x + threadIdx.x;
+    const uint64_t offset = gridDim.x * blockDim.x;
+    for(uint64_t k = idx; k < inputSize; k += offset)
     {
         int minPolygonIndex = -1;
         double minT = 1e18;
@@ -126,7 +127,7 @@ __global__ void ProcessRaysKernel(
 
         if(dpm.transparency() > 0)
         {
-            deviceRaysOutput[atomicAdd(outputSize, 1)] = Ray(
+            deviceRaysOutput[atomicAdd((unsigned long long int*)outputSize, 1)] = Ray(
                 intersection + SHIFT * deviceRaysInput[k].view(),
                 deviceRaysInput[k].view(), 
                 deviceRaysInput[k].uid(),
@@ -136,7 +137,7 @@ __global__ void ProcessRaysKernel(
         if(dpm.reflection() > 0)
         {
             auto reflected = Vector3d::reflect(deviceRaysInput[k].view(), dpm.triangle().n());
-            deviceRaysOutput[atomicAdd(outputSize, 1)] = Ray(
+            deviceRaysOutput[atomicAdd((unsigned long long int*)outputSize, 1)] = Ray(
                 intersection + SHIFT * reflected,
                 reflected, 
                 deviceRaysInput[k].uid(),
@@ -145,10 +146,10 @@ __global__ void ProcessRaysKernel(
     }
 }
 
-__global__ void NormalizeDataKernel(Vector3f* deviceData, uchar4* deviceSSAA, int size)
+__global__ void NormalizeDataKernel(Vector3f* deviceData, uchar4* deviceSSAA, uint64_t size)
 {
-    const int offset = gridDim.x * blockDim.x;
-    for(int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += offset)
+    const uint64_t offset = gridDim.x * blockDim.x;
+    for(uint64_t idx = blockIdx.x * blockDim.x + threadIdx.x; idx < size; idx += offset)
     {
         deviceData[idx].range(0.0, 1.0);
         deviceData[idx] *= 255.0;
@@ -157,14 +158,15 @@ __global__ void NormalizeDataKernel(Vector3f* deviceData, uchar4* deviceSSAA, in
 }
 
 
-int64_t GpuScene::GenerateFrame(int UUID, uchar4* deviceSSAA)
+int64_t GpuScene::GenerateFrame(uint64_t UUID, uchar4* deviceSSAA)
 {
-    int w = camera_m.wSSAA();
-    int h = camera_m.hSSAA();
-    int inputSize = w * h;
+    uint64_t w = camera_m.wSSAA();
+    uint64_t h = camera_m.hSSAA();
+    uint64_t inputSize = w * h;
     Vector3f* deviceDataPtr;
     cudaMalloc(&deviceDataPtr, inputSize * sizeof(Vector3f));
-    PrepareBuffer<<<256, 256>>>(deviceDataPtr, inputSize);
+    PrepareBuffer<<<BLOCKS, THREADS>>>(deviceDataPtr, inputSize);
+    cudaDeviceSynchronize();
     Ray* deviceRaysInputPtr;
     cudaMalloc(&deviceRaysInputPtr, inputSize * sizeof(Ray));
     Camera* deviceCameraPtr;
@@ -180,12 +182,12 @@ int64_t GpuScene::GenerateFrame(int UUID, uchar4* deviceSSAA)
         Ray* deviceRaysOutputPtr;
         cudaMalloc(&deviceRaysOutputPtr, 2 * inputSize * sizeof(Ray));
         
-        int zeroValue = 0;
-        int* deviceOutputSizePtr;
-        cudaMalloc(&deviceOutputSizePtr, sizeof(int));
-        cudaMemcpy(deviceOutputSizePtr, &zeroValue, sizeof(int), cudaMemcpyHostToDevice);
+        uint64_t zeroValue = 0;
+        uint64_t* deviceOutputSizePtr;
+        cudaMalloc(&deviceOutputSizePtr, sizeof(uint64_t));
+        cudaMemcpy(deviceOutputSizePtr, &zeroValue, sizeof(uint64_t), cudaMemcpyHostToDevice);
 
-        ProcessRaysKernel<<<256, 256>>>(
+        ProcessRaysKernel<<<BLOCKS, THREADS>>>(
             deviceRaysInputPtr, 
             inputSize,
             deviceRaysOutputPtr,
@@ -196,12 +198,12 @@ int64_t GpuScene::GenerateFrame(int UUID, uchar4* deviceSSAA)
             devicePolygons_m,
             polygons_m.size());
         cudaDeviceSynchronize();
-        cudaMemcpy(&inputSize, deviceOutputSizePtr, sizeof(int), cudaMemcpyDeviceToHost);
+        cudaMemcpy(&inputSize, deviceOutputSizePtr, sizeof(uint64_t), cudaMemcpyDeviceToHost);
         cudaFree(deviceRaysInputPtr);
         cudaFree(deviceOutputSizePtr);
         deviceRaysInputPtr = deviceRaysOutputPtr;
     }
-    NormalizeDataKernel<<<256, 256>>>(deviceDataPtr, deviceSSAA, w * h);
+    NormalizeDataKernel<<<BLOCKS, THREADS>>>(deviceDataPtr, deviceSSAA, w * h);
     cudaDeviceSynchronize();
     cudaFree(deviceDataPtr);
     cudaFree(deviceRaysInputPtr);
@@ -231,6 +233,7 @@ void GpuScene::Render()
             camera_m.w(),
             camera_m.h(),
             upscaleFactor);
+        cudaDeviceSynchronize();
         std::vector<uchar4> output(camera_m.w() * camera_m.h());
         cudaMemcpy(output.data(), deviceData, camera_m.w() * camera_m.h() * sizeof(uchar4), cudaMemcpyDeviceToHost);
         SaveFile(savePath_m, output, camera_m.w(), camera_m.h(), k);
