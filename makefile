@@ -1,19 +1,18 @@
 # Compiler
 COMPILER = /usr/local/cuda/bin/nvcc
-COMPILER_FLAGS = -G -g -std=c++11 -Xcompiler -Wall -Xcompiler -Werror -Werror cross-execution-space-call,all-warnings,deprecated-declarations -I$(INCLUDE_DIR)
+COMPILER_FLAGS = -O3 -std=c++11 -Xcompiler -Wall -Xcompiler -Werror -Werror cross-execution-space-call,all-warnings,deprecated-declarations -I$(INCLUDE_DIR)
 
 # Directories
 INCLUDE_DIR = include
 SOURCE_DIR = src
-BUILD_DIR = build
-OUT_DIR = out
+BUILD_DIR = .
 RESOURCE_DIR = res
 TEST_DIR = test
 
 SOURCES = $(wildcard $(SOURCE_DIR)/*.cu)
 OBJECTS = $(patsubst $(SOURCE_DIR)/%.cu, $(BUILD_DIR)/%.o, $(SOURCES))
 BINARIES = kp-cuda
-DATA_FILES = $(wildcard $(OUT_DIR)/img_*.data)
+DATA_FILES = $(wildcard $(RESOURCE_DIR)/img_*.data)
 PNG_FILES = $(DATA_FILES:.data=.png)
 
 $(BINARIES): $(OBJECTS)
@@ -23,7 +22,6 @@ $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.cu | $(BUILD_DIR)
 	$(COMPILER) $(COMPILER_FLAGS) -c $< -o $@
 
 $(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
 
 run: $(BINARIES)
 	./$(BINARIES)
@@ -39,15 +37,15 @@ convert_floor:
 
 images_create: $(PNG_FILES)
 
-$(OUT_DIR)/%.png: $(OUT_DIR)/%.data
+$(RESOURCE_DIR)/%.png: $(RESOURCE_DIR)/%.data
 	python ./scripts/conv.py $< $@
 
 memcheck:
 	/usr/local/cuda/bin/compute-sanitizer --tool memcheck $(BINARIES)
 
 all: $(BINARIES) convert_floor
-	mkdir $(OUT_DIR)
+	rm -rf ./*.o
 clean_out:
-	rm -rf $(OUT_DIR)/*
+	rm -rf $(RESOURCE_DIR)/*
 clean:
-	rm -rf $(BUILD_DIR) $(BINARIES) $(OUT_DIR) $(RESOURCE_DIR)/floor.data $(PNG_FILES) $(DATA_FILES)
+	rm -rf $(BINARIES) $(RESOURCE_DIR)/floor.data $(PNG_FILES) $(DATA_FILES)
