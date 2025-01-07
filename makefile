@@ -1,6 +1,6 @@
 # Compiler
 COMPILER = /usr/local/cuda/bin/nvcc
-COMPILER_FLAGS = -O3 -std=c++11 -Xcompiler -Wall -Xcompiler -Werror -Werror cross-execution-space-call,all-warnings,deprecated-declarations -I$(INCLUDE_DIR)
+COMPILER_FLAGS = -O3 -std=c++11 -Xcompiler -Wall -Xcompiler -Werror -Werror cross-execution-space-call -I$(INCLUDE_DIR)
 
 # Directories
 INCLUDE_DIR = include
@@ -42,6 +42,18 @@ $(RESOURCE_DIR)/%.png: $(RESOURCE_DIR)/%.data
 
 memcheck:
 	/usr/local/cuda/bin/compute-sanitizer --tool memcheck $(BINARIES)
+
+benchmark_cpu:
+	./$(BINARIES) --cpu < $(TEST_DIR)/test1.txt
+	./$(BINARIES) --cpu < $(TEST_DIR)/test2.txt
+	./$(BINARIES) --cpu < $(TEST_DIR)/test3.txt
+	./$(BINARIES) --cpu < $(TEST_DIR)/test4.txt
+
+benchmark_gpu:
+	./$(BINARIES) < $(TEST_DIR)/test1.txt
+	./$(BINARIES) < $(TEST_DIR)/test2.txt
+	./$(BINARIES) < $(TEST_DIR)/test3.txt
+	./$(BINARIES) < $(TEST_DIR)/test4.txt
 
 all: $(BINARIES) convert_floor
 	rm -rf ./*.o
